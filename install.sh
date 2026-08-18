@@ -64,7 +64,7 @@ systemctl enable --now v2raya
 install -d -m 0755 "$CONF_DIR"
 
 echo "==> wait for the local API"
-curl -sS --retry 30 --retry-delay 1 --retry-connrefused --max-time 60 -o /dev/null "$API/version" \
+curl -s --retry 30 --retry-delay 1 --retry-connrefused --max-time 60 -o /dev/null "$API/version" \
   || die "v2rayA did not come up — check: journalctl -u v2raya -n 50"
 
 if [ "$(curl -sS "$API/version" | jq -r '.data.hasAccounts')" = 'true' ]; then

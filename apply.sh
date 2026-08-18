@@ -160,27 +160,37 @@ if [ -s "$SERVERS" ]; then
 fi
 
 echo "==> connection"
+# v2rayA can hold several connections at once, so POST alone would add one
+# rather than switch. Drop what is connected first.
+disconnect_all() {
+  while read -r old; do
+    [ -n "$old" ] || continue
+    check "$(api DELETE connection "$old")" "disconnect"
+  done < <(inventory | jq -c '.[] | select(.connected) | {_type, id, sub, outbound:"proxy"}')
+}
+port_up() { (exec 3<>"/dev/tcp/127.0.0.1/$HTTP_PORT") 2>/dev/null; }
+
 if [ -n "$SERVER_Q" ]; then
   which=$(inventory | jq -c --arg q "$SERVER_Q" '
     map(select(.name == $q or (.id | tostring) == $q))
     | if length == 0 then empty else .[0] | {_type, id, sub, outbound:"proxy"} end')
   [ -n "$which" ] || die "no server named or numbered '$SERVER_Q' — see: sudo ./apply.sh --list"
-  # v2rayA can hold several connections at once, so POST alone would add one
-  # rather than switch. Drop what is connected first.
-  while read -r old; do
-    [ -n "$old" ] || continue
-    check "$(api DELETE connection "$old")" "disconnect"
-  done < <(inventory | jq -c '.[] | select(.connected) | {_type, id, sub, outbound:"proxy"}')
+  disconnect_all
   check "$(api POST connection "$which")" "connect"
-elif [ "$(inventory | jq -r 'map(select(.connected)) | length')" = '0' ]; then
-  which=$(inventory | jq -c 'if length == 0 then empty else .[0] | {_type, id, sub, outbound:"proxy"} end')
+elif [ "$(inventory | jq -r 'map(select(.connected)) | length')" = '0' ] || ! port_up; then
+  # Nothing connected, or v2rayA still records a connection whose core is not
+  # actually running — a failed connect leaves exactly that state behind, and
+  # then the proxy ports silently do not exist. Reconnect either way.
+  which=$(inventory | jq -c '(map(select(.connected)) + .)[0] // empty | {_type, id, sub, outbound:"proxy"}')
   if [ -z "$which" ]; then
     echo "    no servers yet — put them in $SERVERS and re-run: sudo ./apply.sh"
     exit 0
   fi
+  disconnect_all
   check "$(api POST connection "$which")" "connect"
 fi
 inventory | jq -r '.[] | select(.connected) | "    connected: \(.name)  \(.address)"'
+port_up || echo "    warning: nothing is listening on $HTTP_PORT — the node did not come up; see: journalctl -u v2raya -n 30"
 
 echo
 echo "==> check"
