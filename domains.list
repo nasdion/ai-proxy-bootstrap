@@ -13,9 +13,12 @@ domain:chatgpt.com
 domain:oaistatic.com
 domain:oaiusercontent.com
 
-# Anthropic / Claude
+# Anthropic / Claude / Claude Code
+# claude.com is a separate zone from claude.ai — Claude Code talks to
+# platform.claude.com, and without this line it goes direct and gets 403.
 domain:anthropic.com
 domain:claude.ai
+domain:claude.com
 
 # Google Gemini
 full:generativelanguage.googleapis.com
