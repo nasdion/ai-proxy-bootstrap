@@ -1,0 +1,22 @@
+# Domains that go through the proxy. Everything else goes direct.
+#
+# One matcher per line:
+#   domain:example.com       example.com and every subdomain
+#   full:api.example.com     exactly this name
+#   geosite:google           a named list from geosite.dat
+#
+# Apply changes with:  sudo ./apply.sh
+
+# OpenAI / ChatGPT / Codex
+domain:openai.com
+domain:chatgpt.com
+domain:oaistatic.com
+domain:oaiusercontent.com
+
+# Anthropic / Claude
+domain:anthropic.com
+domain:claude.ai
+
+# Google Gemini
+full:generativelanguage.googleapis.com
+domain:aistudio.google.com
